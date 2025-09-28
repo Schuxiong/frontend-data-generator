@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据生成器 Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>数据生成器</h1>
+            <p>智能生成客群数据和指标数据</p>
+        </header>
+
+        <!-- 配置面板 -->
+        <div class="config-panel">
+            <h2>配置参数</h2>
+                
+                <!-- 基础配置 -->
+                <div class="config-section">
+                    <h3>基础配置</h3>
+                    <div class="form-group">
+                        <label for="userCount">用户数量:</label>
+                        <input type="number" id="userCount" min="1" max="1000" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="cusGroupId">客群ID (cusgroup_id):</label>
+                        <input type="text" id="cusGroupId" value="30047" placeholder="输入客群ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="statTime">统计时间 (stat_time):</label>
+                        <input type="date" id="statTime" value="2025-09-25">
+                    </div>
+                </div>
+
+                <!-- 客群表字段选择 -->
+                <div class="config-section">
+                    <h3>客群表字段选择</h3>
+                    <div class="field-selection-header">
+                        <button type="button" id="selectAllFields" class="btn btn-small">全选</button>
+                        <button type="button" id="deselectAllFields" class="btn btn-small">全不选</button>
+                        <button type="button" id="selectRequiredFields" class="btn btn-small">仅必需字段</button>
+                    </div>
+                    <div class="field-selection-grid" id="fieldSelectionGrid">
+                        <!-- 字段选择项将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 时间范围配置 -->
+                <div class="config-section">
+                    <h3>指标数据时间范围</h3>
+                    <div class="form-group">
+                        <label for="startDate">开始日期:</label>
+                        <input type="date" id="startDate" value="2025-06-29">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">结束日期:</label>
+                        <input type="date" id="endDate" value="2025-09-26">
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="action-buttons">
+                    <button id="generateCustomerBtn" class="btn btn-primary">生成客户数据</button>
+                    <button id="generateMetricsBtn" class="btn btn-secondary" disabled>生成指标数据</button>
+                    <button id="clearDataBtn" class="btn btn-danger">清空数据</button>
+                </div>
+        </div>
+
+        <!-- 预览面板 -->
+        <div class="preview-panel">
+            <h2>数据预览</h2>
+                
+                <!-- 客户数据预览 -->
+                <div class="preview-section">
+                    <div class="section-header">
+                        <h3>客户数据</h3>
+                        <button id="downloadCustomerBtn" class="btn btn-download" disabled>下载 CSV</button>
+                    </div>
+                    <div id="customerPreview" class="data-preview">
+                        <p class="placeholder">点击"生成客户数据"开始生成数据</p>
+                    </div>
+                </div>
+
+                <!-- 指标数据预览 -->
+                <div class="preview-section">
+                    <div class="section-header">
+                        <h3>指标数据</h3>
+                        <button id="downloadMetricsBtn" class="btn btn-download" disabled>下载 CSV</button>
+                    </div>
+                    <div id="metricsPreview" class="data-preview">
+                        <p class="placeholder">先生成客户数据，然后点击"生成指标数据"</p>
+                    </div>
+                </div>
+        </div>
+
+        <!-- 状态信息 -->
+        <div id="statusInfo" class="status-info">
+            <p>应用已初始化，请配置参数后生成数据</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
