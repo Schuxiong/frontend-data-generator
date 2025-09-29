@@ -355,7 +355,7 @@ class MetricsDataGenerator {
         customerData.forEach(customer => {
             dateRange.forEach(date => {
                 const metrics = {
-                    stat_date: DataGenerator.formatDateShort(date),
+                    stat_date: date,
                     cust_no: customer.cust_no,
                     user_id: customer.user_id,
                     card_trans_cnt: DataGenerator.randomInt(0, 50),
