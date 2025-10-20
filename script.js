@@ -22,8 +22,8 @@ const CUSTOMER_FIELDS = {
     open_email_notification_flag: { type: 'string', required: false, values: ['Y', 'N'] },
     interest_coupon_ccy_type: { type: 'array', required: false, values: ['中期定存_HKD', '中期定存_USD', '主账户活期加息_HKD', '主账户活期加息_USD', '短期定存_HKD', '短期定存_USD', '钱罐加息_HKD', '长期定存_HKD', '长期定存_USD'] },
     piggy_product_code_list: { type: 'array', required: false, values: ['懒人钱罐', '新资金钱罐', '智安存钱罐', '高息钱罐'] },
-    high_pot_rate_add_type: { type: 'array', required: false, values: [] },
-    piggy_time_aum: { type: 'decimal', required: false, values: ['任务加息_HKD', '手工加息_HKD'] },
+    high_pot_rate_add_type: { type: 'array', required: false, values: ['任务加息_HKD', '手工加息_HKD'] },
+    piggy_time_aum: { type: 'decimal', required: false, values: [] },
     mon_transfer_type: { type: 'array', required: false, values: ['Card', 'CardATM', 'Cross-Border', 'Crypto', 'FX', 'Fund', 'Loan', 'OpenTD', 'OthTakeout', 'Piggy', 'Redpacket', 'Remit', 'Stock'] },
     fps_bind_bank_name_list: { type: 'array', required: false, values: ['OCBC BANK (HONG KONG) LIMITED', 'ZA Bank Limited', 'tng (asia) limited'] },
     bind_auto_edda_flag: { type: 'string', required: false, values: ['Y', 'N'] },
@@ -242,8 +242,7 @@ class CustomerDataGenerator {
                 if (field.values.length > 0) {
                     const count = DataGenerator.randomInt(1, Math.min(3, field.values.length));
                     const selected = DataGenerator.randomSample(field.values, count);
-                    // 格式化为 ClickHouse 数组格式 ['元素1','元素2']
-                    return `[${selected.map(item => `'${item}'`).join(',')}]`;
+                    return selected.join(',');
                 }
                 return '';
                 
