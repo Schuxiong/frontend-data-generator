@@ -421,8 +421,6 @@ class MetricsDataGenerator {
         const netProfitAmountHkdInsure = annualisedTotalPremium * DataGenerator.randomDecimal(0.05, 0.15, 4);
 
         return {
-            _aim_reserved_create_time: DataGenerator.generateTimestamp(),
-            _aim_reserved_version: 0,
             user_id: customer.user_id,
             stat_date: date,
             cust_no: customer.cust_no,
