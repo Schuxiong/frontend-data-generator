@@ -242,7 +242,8 @@ class CustomerDataGenerator {
                 if (field.values.length > 0) {
                     const count = DataGenerator.randomInt(1, Math.min(3, field.values.length));
                     const selected = DataGenerator.randomSample(field.values, count);
-                    return selected.join(',');
+                    // 格式化为 ClickHouse 数组格式 ['元素1','元素2']
+                    return `[${selected.map(item => `'${item}'`).join(',')}]`;
                 }
                 return '';
                 
