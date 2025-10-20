@@ -133,6 +133,11 @@ class DataGenerator {
         const value = Math.random() * (max - min) + min;
         return parseFloat(value.toFixed(decimals));
     }
+
+    // 生成当前时间戳（毫秒）
+    static generateTimestamp() {
+        return new Date().toISOString().replace('T', ' ').replace('Z', '');
+    }
 }
 
 // 状态管理
@@ -354,46 +359,7 @@ class MetricsDataGenerator {
         // 为每个用户生成每天的指标数据
         customerData.forEach(customer => {
             dateRange.forEach(date => {
-                const metrics = {
-                    stat_date: date,
-                    cust_no: customer.cust_no,
-                    user_id: customer.user_id,
-                    card_trans_cnt: DataGenerator.randomInt(0, 50),
-                    card_trans_amt_hkd: DataGenerator.randomDecimal(0, 50000, 2),
-                    card_trans_income_hkd: DataGenerator.randomDecimal(0, 5000, 2),
-                    card_trans_cnt_online: DataGenerator.randomInt(0, 30),
-                    card_trans_amt_hkd_online: DataGenerator.randomDecimal(0, 30000, 2),
-                    card_trans_income_hkd_online: DataGenerator.randomDecimal(0, 3000, 2),
-                    card_trans_cnt_offline: DataGenerator.randomInt(0, 20),
-                    card_trans_amt_hkd_offline: DataGenerator.randomDecimal(0, 20000, 2),
-                    card_trans_income_hkd_offline: DataGenerator.randomDecimal(0, 2000, 2),
-                    card_trans_cnt_oversea: DataGenerator.randomInt(0, 10),
-                    card_trans_amt_hkd_oversea: DataGenerator.randomDecimal(0, 15000, 2),
-                    card_trans_income_hkd_oversea: DataGenerator.randomDecimal(0, 1500, 2),
-                    card_trans_cnt_local: DataGenerator.randomInt(0, 40),
-                    card_trans_amt_hkd_local: DataGenerator.randomDecimal(0, 35000, 2),
-                    card_trans_income_hkd_local: DataGenerator.randomDecimal(0, 3500, 2),
-                    card_trans_cnt_atm: DataGenerator.randomInt(0, 5),
-                    card_trans_amt_hkd_atm: DataGenerator.randomDecimal(0, 5000, 2),
-                    card_trans_income_hkd_atm: DataGenerator.randomDecimal(0, 50, 2),
-                    card_trans_cnt_contactless: DataGenerator.randomInt(0, 25),
-                    card_trans_amt_hkd_contactless: DataGenerator.randomDecimal(0, 15000, 2),
-                    card_trans_income_hkd_contactless: DataGenerator.randomDecimal(0, 1500, 2),
-                    card_trans_cnt_chip: DataGenerator.randomInt(0, 20),
-                    card_trans_amt_hkd_chip: DataGenerator.randomDecimal(0, 20000, 2),
-                    card_trans_income_hkd_chip: DataGenerator.randomDecimal(0, 2000, 2),
-                    card_trans_cnt_mag: DataGenerator.randomInt(0, 5),
-                    card_trans_amt_hkd_mag: DataGenerator.randomDecimal(0, 3000, 2),
-                    card_trans_income_hkd_mag: DataGenerator.randomDecimal(0, 300, 2),
-                    card_trans_cnt_ecom: DataGenerator.randomInt(0, 15),
-                    card_trans_amt_hkd_ecom: DataGenerator.randomDecimal(0, 10000, 2),
-                    card_trans_income_hkd_ecom: DataGenerator.randomDecimal(0, 1000, 2),
-                    card_trans_cnt_pos: DataGenerator.randomInt(0, 35),
-                    card_trans_amt_hkd_pos: DataGenerator.randomDecimal(0, 25000, 2),
-                    card_trans_income_hkd_pos: DataGenerator.randomDecimal(0, 2500, 2)
-                    // 注意：这里移除了原有的时间戳字段，因为all_users_metrics.csv中没有这些字段
-                };
-                
+                const metrics = this.generateMetricsRecord(customer, date);
                 metricsData.push(metrics);
             });
         });
@@ -403,6 +369,98 @@ class MetricsDataGenerator {
         StatusManager.showSuccess(`成功生成 ${metricsData.length} 条指标数据 (${customerData.length} 用户 × ${dateRange.length} 天)`);
         
         return true;
+    }
+
+    static generateMetricsRecord(customer, date) {
+        // 生成基础交易数据
+        const cardTransCnt = DataGenerator.randomInt(0, 50);
+        const cardTransAmtHkd = DataGenerator.randomDecimal(0, 50000, 2);
+        const cardTransIncomeHkd = cardTransAmtHkd * DataGenerator.randomDecimal(0.01, 0.05, 4); // 1-5% 收入率
+        const cardTransCostHkd = cardTransIncomeHkd * DataGenerator.randomDecimal(0.3, 0.7, 4); // 成本为收入的30-70%
+        const cardTransRewardHkd = cardTransAmtHkd * DataGenerator.randomDecimal(0.005, 0.02, 4); // 0.5-2% 返现率
+        const cardTransNetRevenueHkd = cardTransIncomeHkd - cardTransCostHkd - cardTransRewardHkd;
+
+        // 生成存款相关数据
+        const totalBalHkd = DataGenerator.randomDecimal(1000, 1000000, 2);
+        const savingBalHkd = totalBalHkd * DataGenerator.randomDecimal(0.3, 0.8, 4); // 活期占30-80%
+        const timeBalHkd = totalBalHkd - savingBalHkd; // 定存余额
+        const coreCasaHkd = savingBalHkd * DataGenerator.randomDecimal(0.5, 0.9, 4); // 低息活期占50-90%
+        const highCasaHkd = savingBalHkd - coreCasaHkd; // 高息活期
+
+        // 生成投资相关数据
+        const totalInvestAumHkd = DataGenerator.randomDecimal(0, 500000, 2);
+        const fundAumHkd = totalInvestAumHkd * DataGenerator.randomDecimal(0.2, 0.6, 4);
+        const mmfAumHkd = fundAumHkd * DataGenerator.randomDecimal(0.3, 0.7, 4);
+        const nonMmfAumHkd = fundAumHkd - mmfAumHkd;
+        const stockAumHkd = totalInvestAumHkd * DataGenerator.randomDecimal(0.1, 0.4, 4);
+        const cryptoHoldingHkd = totalInvestAumHkd * DataGenerator.randomDecimal(0.0, 0.3, 4);
+
+        // 生成股票和加密货币交易数据
+        const stockTransCnt = DataGenerator.randomInt(0, 20);
+        const stockTransAmtHkd = stockTransCnt > 0 ? DataGenerator.randomDecimal(1000, 100000, 2) : 0;
+        const cryptoTransCnt = DataGenerator.randomInt(0, 15);
+        const cryptoTransAmtHkd = cryptoTransCnt > 0 ? DataGenerator.randomDecimal(500, 50000, 2) : 0;
+
+        // 计算总AUM和净收入
+        const totalAum = totalBalHkd + totalInvestAumHkd;
+        const netProfitAmountHkdDeposit = totalBalHkd * DataGenerator.randomDecimal(0.001, 0.01, 6); // 存款净收入
+        const savingIncomeHkd = savingBalHkd * DataGenerator.randomDecimal(0.0005, 0.005, 6);
+        const timeIncomeHkd = timeBalHkd * DataGenerator.randomDecimal(0.002, 0.015, 6);
+        
+        const netProfitAmountHkdInvest = totalInvestAumHkd * DataGenerator.randomDecimal(-0.01, 0.02, 6); // 投资净收入可能为负
+        const stkNetIncome = stockAumHkd * DataGenerator.randomDecimal(-0.02, 0.03, 6);
+        const cryptoNetIncome = cryptoHoldingHkd * DataGenerator.randomDecimal(-0.05, 0.05, 6);
+        const mmfNetIncome = mmfAumHkd * DataGenerator.randomDecimal(0.001, 0.008, 6);
+        const nonMmfNetIncome = nonMmfAumHkd * DataGenerator.randomDecimal(-0.01, 0.02, 6);
+        const fundNetIncome = mmfNetIncome + nonMmfNetIncome;
+
+        const netProfitAmountHkdRetail = netProfitAmountHkdDeposit + netProfitAmountHkdInvest + cardTransNetRevenueHkd;
+        
+        // 保险相关数据
+        const annualisedTotalPremium = DataGenerator.randomDecimal(0, 50000, 2);
+        const netProfitAmountHkdInsure = annualisedTotalPremium * DataGenerator.randomDecimal(0.05, 0.15, 4);
+
+        return {
+            _aim_reserved_create_time: DataGenerator.generateTimestamp(),
+            _aim_reserved_version: 0,
+            user_id: customer.user_id,
+            stat_date: date,
+            cust_no: customer.cust_no,
+            card_trans_cnt: cardTransCnt,
+            card_trans_amt_hkd: cardTransAmtHkd,
+            card_trans_income_hkd: cardTransIncomeHkd,
+            card_trans_cost_hkd: cardTransCostHkd,
+            card_trans_reward_hkd: cardTransRewardHkd,
+            card_trans_net_revenue_hkd: cardTransNetRevenueHkd,
+            total_bal_hkd: totalBalHkd,
+            saving_bal_hkd: savingBalHkd,
+            core_casa_hkd: coreCasaHkd,
+            high_casa_hkd: highCasaHkd,
+            time_bal_hkd: timeBalHkd,
+            net_profit_amount_hkd_deposit: netProfitAmountHkdDeposit,
+            saving_income_hkd: savingIncomeHkd,
+            time_income_hkd: timeIncomeHkd,
+            total_invest_aum_hkd: totalInvestAumHkd,
+            fund_aum_hkd: fundAumHkd,
+            mmf_aum_hkd: mmfAumHkd,
+            non_mmf_aum_hkd: nonMmfAumHkd,
+            stock_aum_hkd: stockAumHkd,
+            crypto_holding_hkd: cryptoHoldingHkd,
+            net_profit_amount_hkd_invest: netProfitAmountHkdInvest,
+            stk_net_income: stkNetIncome,
+            crypto_net_income: cryptoNetIncome,
+            mmf_net_income: mmfNetIncome,
+            non_mmf_net_income: nonMmfNetIncome,
+            fund_net_income: fundNetIncome,
+            stock_trans_cnt: stockTransCnt,
+            stock_trans_amt_hkd: stockTransAmtHkd,
+            crypto_trans_cnt: cryptoTransCnt,
+            crypto_trans_amt_hkd: cryptoTransAmtHkd,
+            total_aum: totalAum,
+            net_profit_amount_hkd_retail: netProfitAmountHkdRetail,
+            annualised_total_premium: annualisedTotalPremium,
+            net_profit_amount_hkd_insure: netProfitAmountHkdInsure
+        };
     }
 
     static updatePreview() {
