@@ -47,6 +47,8 @@ let userCountInput, cusGroupIdInput, statTimeInput, startDateInput, endDateInput
 let generateCustomerBtn, generateMetricsBtn, clearDataBtn, downloadCustomerBtn, downloadMetricsBtn;
 let customerPreview, metricsPreview, statusDiv, fieldSelectionGrid;
 let selectAllFieldsBtn, deselectAllFieldsBtn, selectRequiredFieldsBtn;
+let dataModeSelect, autoModeConfig, manualModeConfig, userIdCustNoInput, parseUserListBtn, userListStatus;
+let todayBtn, yesterdayBtn, lastWeekBtn, startDatePreset1, startDatePreset2, startDatePreset3, endDateToday, endDateYesterday;
 
 // 初始化DOM元素引用
 function initDOMElements() {
@@ -67,6 +69,24 @@ function initDOMElements() {
     selectAllFieldsBtn = document.getElementById('selectAllFields');
     deselectAllFieldsBtn = document.getElementById('deselectAllFields');
     selectRequiredFieldsBtn = document.getElementById('selectRequiredFields');
+    
+    // 新增的DOM元素
+    dataModeSelect = document.getElementById('dataMode');
+    autoModeConfig = document.getElementById('autoModeConfig');
+    manualModeConfig = document.getElementById('manualModeConfig');
+    userIdCustNoInput = document.getElementById('userIdCustNoInput');
+    parseUserListBtn = document.getElementById('parseUserListBtn');
+    userListStatus = document.getElementById('userListStatus');
+    
+    // 日期快捷按钮
+    todayBtn = document.getElementById('todayBtn');
+    yesterdayBtn = document.getElementById('yesterdayBtn');
+    lastWeekBtn = document.getElementById('lastWeekBtn');
+    startDatePreset1 = document.getElementById('startDatePreset1');
+    startDatePreset2 = document.getElementById('startDatePreset2');
+    startDatePreset3 = document.getElementById('startDatePreset3');
+    endDateToday = document.getElementById('endDateToday');
+    endDateYesterday = document.getElementById('endDateYesterday');
 }
 
 // 工具函数
@@ -167,14 +187,24 @@ class CustomerDataGenerator {
             customerData = [];
             userIdCustNoMapping = {};
             
-            for (let i = 1; i <= config.userCount; i++) {
-                const userId = DataGenerator.generateUserId();
-                const custNo = DataGenerator.generateCustNo();
-                
-                userIdCustNoMapping[userId] = custNo;
-                
-                const customer = this.generateCustomerRecord(userId, custNo, config);
-                customerData.push(customer);
+            if (config.mode === 'manual') {
+                // 手动输入模式：使用用户提供的 userid+custno 列表
+                config.userList.forEach(userInfo => {
+                    userIdCustNoMapping[userInfo.userId] = userInfo.custNo;
+                    const customer = this.generateCustomerRecord(userInfo.userId, userInfo.custNo, config);
+                    customerData.push(customer);
+                });
+            } else {
+                // 自动生成模式：生成随机的 userid+custno
+                for (let i = 1; i <= config.userCount; i++) {
+                    const userId = DataGenerator.generateUserId();
+                    const custNo = DataGenerator.generateCustNo();
+                    
+                    userIdCustNoMapping[userId] = custNo;
+                    
+                    const customer = this.generateCustomerRecord(userId, custNo, config);
+                    customerData.push(customer);
+                }
             }
             
             this.updatePreview();
@@ -252,18 +282,34 @@ class CustomerDataGenerator {
     }
     
     static parseConfig() {
-        return {
-            userCount: parseInt(userCountInput.value) || 20,
+        const mode = dataModeSelect.value;
+        const config = {
+            mode: mode,
             cusGroupId: cusGroupIdInput.value || '30047',
             statTime: statTimeInput.value || '2025-09-25',
             selectedFields: FieldSelector.getSelectedFields()
         };
+        
+        if (mode === 'manual') {
+            config.userList = UserListParser.getParsedUserList();
+        } else {
+            config.userCount = parseInt(userCountInput.value) || 20;
+        }
+        
+        return config;
     }
     
     static validateConfig(config) {
-        if (config.userCount < 1 || config.userCount > 1000) {
-            StatusManager.showError('用户数量必须在 1-1000 之间');
-            return false;
+        if (config.mode === 'manual') {
+            if (!config.userList || config.userList.length === 0) {
+                StatusManager.showError('请先解析用户列表');
+                return false;
+            }
+        } else {
+            if (config.userCount < 1 || config.userCount > 1000) {
+                StatusManager.showError('用户数量必须在 1-1000 之间');
+                return false;
+            }
         }
         
         if (config.selectedFields.length === 0) {
@@ -322,6 +368,66 @@ class CustomerDataGenerator {
     }
 }
 
+// 用户列表解析器
+class UserListParser {
+    static parsedUserList = [];
+    
+    static parseUserList() {
+        try {
+            const input = userIdCustNoInput.value.trim();
+            if (!input) {
+                StatusManager.showError('请输入用户列表');
+                return;
+            }
+            
+            StatusManager.showLoading('正在解析用户列表...');
+            
+            const lines = input.split('\n').filter(line => line.trim());
+            const userList = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                const parts = line.split(/[,\t\s]+/); // 支持逗号、制表符、空格分隔
+                
+                if (parts.length >= 2) {
+                    const userId = parts[0].trim();
+                    const custNo = parts[1].trim();
+                    
+                    if (userId && custNo) {
+                        userList.push({ userId, custNo });
+                    }
+                } else {
+                    StatusManager.showError(`第 ${i + 1} 行格式错误，请使用 "userid,custno" 格式`);
+                    return;
+                }
+            }
+            
+            if (userList.length === 0) {
+                StatusManager.showError('未解析到有效的用户数据');
+                return;
+            }
+            
+            this.parsedUserList = userList;
+            userListStatus.textContent = `已解析 ${userList.length} 个用户`;
+            userListStatus.className = 'status-success';
+            StatusManager.showSuccess(`成功解析 ${userList.length} 个用户`);
+            
+        } catch (error) {
+            StatusManager.showError(`解析用户列表失败: ${error.message}`);
+        }
+    }
+    
+    static getParsedUserList() {
+        return this.parsedUserList;
+    }
+    
+    static clearParsedUserList() {
+        this.parsedUserList = [];
+        userListStatus.textContent = '';
+        userListStatus.className = '';
+    }
+}
+
 // 指标数据生成器
 class MetricsDataGenerator {
     static generate() {
@@ -355,43 +461,43 @@ class MetricsDataGenerator {
         customerData.forEach(customer => {
             dateRange.forEach(date => {
                 const metrics = {
+                    user_id: customer.user_id,
                     stat_date: date,
                     cust_no: customer.cust_no,
-                    user_id: customer.user_id,
                     card_trans_cnt: DataGenerator.randomInt(0, 50),
-                    card_trans_amt_hkd: DataGenerator.randomDecimal(0, 50000, 2),
-                    card_trans_income_hkd: DataGenerator.randomDecimal(0, 5000, 2),
-                    card_trans_cnt_online: DataGenerator.randomInt(0, 30),
-                    card_trans_amt_hkd_online: DataGenerator.randomDecimal(0, 30000, 2),
-                    card_trans_income_hkd_online: DataGenerator.randomDecimal(0, 3000, 2),
-                    card_trans_cnt_offline: DataGenerator.randomInt(0, 20),
-                    card_trans_amt_hkd_offline: DataGenerator.randomDecimal(0, 20000, 2),
-                    card_trans_income_hkd_offline: DataGenerator.randomDecimal(0, 2000, 2),
-                    card_trans_cnt_oversea: DataGenerator.randomInt(0, 10),
-                    card_trans_amt_hkd_oversea: DataGenerator.randomDecimal(0, 15000, 2),
-                    card_trans_income_hkd_oversea: DataGenerator.randomDecimal(0, 1500, 2),
-                    card_trans_cnt_local: DataGenerator.randomInt(0, 40),
-                    card_trans_amt_hkd_local: DataGenerator.randomDecimal(0, 35000, 2),
-                    card_trans_income_hkd_local: DataGenerator.randomDecimal(0, 3500, 2),
-                    card_trans_cnt_atm: DataGenerator.randomInt(0, 5),
-                    card_trans_amt_hkd_atm: DataGenerator.randomDecimal(0, 5000, 2),
-                    card_trans_income_hkd_atm: DataGenerator.randomDecimal(0, 50, 2),
-                    card_trans_cnt_contactless: DataGenerator.randomInt(0, 25),
-                    card_trans_amt_hkd_contactless: DataGenerator.randomDecimal(0, 15000, 2),
-                    card_trans_income_hkd_contactless: DataGenerator.randomDecimal(0, 1500, 2),
-                    card_trans_cnt_chip: DataGenerator.randomInt(0, 20),
-                    card_trans_amt_hkd_chip: DataGenerator.randomDecimal(0, 20000, 2),
-                    card_trans_income_hkd_chip: DataGenerator.randomDecimal(0, 2000, 2),
-                    card_trans_cnt_mag: DataGenerator.randomInt(0, 5),
-                    card_trans_amt_hkd_mag: DataGenerator.randomDecimal(0, 3000, 2),
-                    card_trans_income_hkd_mag: DataGenerator.randomDecimal(0, 300, 2),
-                    card_trans_cnt_ecom: DataGenerator.randomInt(0, 15),
-                    card_trans_amt_hkd_ecom: DataGenerator.randomDecimal(0, 10000, 2),
-                    card_trans_income_hkd_ecom: DataGenerator.randomDecimal(0, 1000, 2),
-                    card_trans_cnt_pos: DataGenerator.randomInt(0, 35),
-                    card_trans_amt_hkd_pos: DataGenerator.randomDecimal(0, 25000, 2),
-                    card_trans_income_hkd_pos: DataGenerator.randomDecimal(0, 2500, 2)
-                    // 注意：这里移除了原有的时间戳字段，因为all_users_metrics.csv中没有这些字段
+                    card_trans_amt_hkd: DataGenerator.randomDecimal(0, 50000, 12),
+                    card_trans_income_hkd: DataGenerator.randomDecimal(0, 5000, 12),
+                    card_trans_cost_hkd: DataGenerator.randomDecimal(0, 2000, 12),
+                    card_trans_reward_hkd: DataGenerator.randomDecimal(0, 1000, 12),
+                    card_trans_net_revenue_hkd: DataGenerator.randomDecimal(0, 3000, 12),
+                    total_bal_hkd: DataGenerator.randomDecimal(0, 1000000, 12),
+                    saving_bal_hkd: DataGenerator.randomDecimal(0, 500000, 12),
+                    core_casa_hkd: DataGenerator.randomDecimal(0, 300000, 12),
+                    high_casa_hkd: DataGenerator.randomDecimal(0, 200000, 12),
+                    time_bal_hkd: DataGenerator.randomDecimal(0, 500000, 12),
+                    net_profit_amount_hkd_deposit: DataGenerator.randomDecimal(0, 10000, 12),
+                    saving_income_hkd: DataGenerator.randomDecimal(0, 5000, 12),
+                    time_income_hkd: DataGenerator.randomDecimal(0, 5000, 12),
+                    total_invest_aum_hkd: DataGenerator.randomDecimal(0, 800000, 12),
+                    fund_aum_hkd: DataGenerator.randomDecimal(0, 300000, 12),
+                    mmf_aum_hkd: DataGenerator.randomDecimal(0, 200000, 12),
+                    non_mmf_aum_hkd: DataGenerator.randomDecimal(0, 100000, 12),
+                    stock_aum_hkd: DataGenerator.randomDecimal(0, 200000, 12),
+                    crypto_holding_hkd: DataGenerator.randomDecimal(0, 100000, 12),
+                    net_profit_amount_hkd_invest: DataGenerator.randomDecimal(0, 8000, 12),
+                    stk_net_income: DataGenerator.randomDecimal(0, 3000, 12),
+                    crypto_net_income: DataGenerator.randomDecimal(0, 2000, 12),
+                    mmf_net_income: DataGenerator.randomDecimal(0, 1000, 12),
+                    non_mmf_net_income: DataGenerator.randomDecimal(0, 1500, 12),
+                    fund_net_income: DataGenerator.randomDecimal(0, 2000, 12),
+                    stock_trans_cnt: DataGenerator.randomInt(0, 30),
+                    stock_trans_amt_hkd: DataGenerator.randomDecimal(0, 100000, 12),
+                    crypto_trans_cnt: DataGenerator.randomInt(0, 20),
+                    crypto_trans_amt_hkd: DataGenerator.randomDecimal(0, 50000, 12),
+                    total_aum: DataGenerator.randomDecimal(0, 1500000, 12),
+                    net_profit_amount_hkd_retail: DataGenerator.randomDecimal(0, 15000, 12),
+                    annualised_total_premium: DataGenerator.randomDecimal(0, 50000, 12),
+                    net_profit_amount_hkd_insure: DataGenerator.randomDecimal(0, 3000, 12)
                 };
                 
                 metricsData.push(metrics);
@@ -521,6 +627,9 @@ class DataCleaner {
             metricsData = [];
             userIdCustNoMapping = {};
             
+            // 清理用户列表解析状态
+            UserListParser.clearParsedUserList();
+            
             // 重置预览
             customerPreview.innerHTML = '<p class="placeholder">点击"生成客户数据"开始生成数据</p>';
             metricsPreview.innerHTML = '<p class="placeholder">先生成客户数据，然后点击"生成指标数据"</p>';
@@ -611,6 +720,57 @@ class FieldSelector {
     }
 }
 
+// 日期预设功能
+class DatePresets {
+    static setToday() {
+        const today = new Date().toISOString().split('T')[0];
+        statTimeInput.value = today;
+    }
+    
+    static setYesterday() {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        statTimeInput.value = yesterday.toISOString().split('T')[0];
+    }
+    
+    static setLastWeek() {
+        const lastWeek = new Date();
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        statTimeInput.value = lastWeek.toISOString().split('T')[0];
+    }
+    
+    static setStartDatePreset(days) {
+        const date = new Date();
+        date.setDate(date.getDate() - days);
+        startDateInput.value = date.toISOString().split('T')[0];
+    }
+    
+    static setEndDateToday() {
+        const today = new Date().toISOString().split('T')[0];
+        endDateInput.value = today;
+    }
+    
+    static setEndDateYesterday() {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        endDateInput.value = yesterday.toISOString().split('T')[0];
+    }
+}
+
+// 数据生成模式管理器
+class DataModeManager {
+    static toggleMode() {
+        const mode = dataModeSelect.value;
+        if (mode === 'manual') {
+            autoModeConfig.style.display = 'none';
+            manualModeConfig.style.display = 'block';
+        } else {
+            autoModeConfig.style.display = 'block';
+            manualModeConfig.style.display = 'none';
+        }
+    }
+}
+
 // 事件监听器
 function initEventListeners() {
     if (generateCustomerBtn) {
@@ -636,6 +796,44 @@ function initEventListeners() {
     if (downloadMetricsBtn) {
         downloadMetricsBtn.addEventListener('click', () => CSVExporter.downloadMetricsData());
     }
+    
+    // 数据生成模式切换
+    if (dataModeSelect) {
+        dataModeSelect.addEventListener('change', DataModeManager.toggleMode);
+    }
+    
+    // 用户列表解析
+    if (parseUserListBtn) {
+        parseUserListBtn.addEventListener('click', UserListParser.parseUserList);
+    }
+    
+    // 日期预设按钮
+    if (todayBtn) {
+        todayBtn.addEventListener('click', DatePresets.setToday);
+    }
+    if (yesterdayBtn) {
+        yesterdayBtn.addEventListener('click', DatePresets.setYesterday);
+    }
+    if (lastWeekBtn) {
+        lastWeekBtn.addEventListener('click', DatePresets.setLastWeek);
+    }
+    
+    if (startDatePreset1) {
+        startDatePreset1.addEventListener('click', () => DatePresets.setStartDatePreset(7));
+    }
+    if (startDatePreset2) {
+        startDatePreset2.addEventListener('click', () => DatePresets.setStartDatePreset(30));
+    }
+    if (startDatePreset3) {
+        startDatePreset3.addEventListener('click', () => DatePresets.setStartDatePreset(90));
+    }
+    
+    if (endDateToday) {
+        endDateToday.addEventListener('click', DatePresets.setEndDateToday);
+    }
+    if (endDateYesterday) {
+        endDateYesterday.addEventListener('click', DatePresets.setEndDateYesterday);
+    }
 }
 
 // 初始化应用
@@ -658,6 +856,9 @@ function initApp() {
     
     // 初始化字段选择事件
     FieldSelector.initFieldSelectionEvents();
+    
+    // 初始化数据生成模式显示
+    DataModeManager.toggleMode();
     
     StatusManager.updateStatus('应用已初始化，请配置参数后生成数据');
 }

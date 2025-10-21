@@ -21,16 +21,46 @@
                 <div class="config-section">
                     <h3>基础配置</h3>
                     <div class="form-group">
-                        <label for="userCount">用户数量:</label>
-                        <input type="number" id="userCount" min="1" max="1000" value="20">
+                        <label for="dataMode">数据生成模式:</label>
+                        <select id="dataMode">
+                            <option value="auto">自动生成模式</option>
+                            <option value="manual">手动输入模式</option>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label for="cusGroupId">客群ID (cusgroup_id):</label>
-                        <input type="text" id="cusGroupId" value="30047" placeholder="输入客群ID">
+                    
+                    <!-- 自动生成模式配置 -->
+                    <div id="autoModeConfig" class="mode-config">
+                        <div class="form-group">
+                            <label for="userCount">用户数量:</label>
+                            <input type="number" id="userCount" min="1" max="1000" value="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="cusGroupId">客群ID (cusgroup_id):</label>
+                            <input type="text" id="cusGroupId" value="30047" placeholder="输入客群ID">
+                        </div>
                     </div>
+                    
+                    <!-- 手动输入模式配置 -->
+                    <div id="manualModeConfig" class="mode-config" style="display: none;">
+                        <div class="form-group">
+                            <label for="userIdCustNoInput">用户ID和客户号列表:</label>
+                            <textarea id="userIdCustNoInput" rows="8" placeholder="请输入用户ID和客户号，每行一对，格式：user_id,cust_no&#10;例如：&#10;1234567890123456789,1000000001&#10;9876543210987654321,1000000002&#10;..."></textarea>
+                            <small>每行输入一对 user_id,cust_no，用逗号分隔</small>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" id="parseUserListBtn" class="btn btn-secondary">解析用户列表</button>
+                            <span id="userListStatus" class="status-text"></span>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="statTime">统计时间 (stat_date):</label>
-                        <input type="date" id="statTime" value="2025-09-25">
+                        <div class="date-input-group">
+                            <input type="date" id="statTime" value="2025-09-25">
+                            <button type="button" id="todayBtn" class="btn btn-small">今天</button>
+                            <button type="button" id="yesterdayBtn" class="btn btn-small">昨天</button>
+                            <button type="button" id="lastWeekBtn" class="btn btn-small">上周</button>
+                        </div>
                     </div>
                 </div>
 
@@ -52,11 +82,20 @@
                     <h3>指标数据时间范围</h3>
                     <div class="form-group">
                         <label for="startDate">开始日期:</label>
-                        <input type="date" id="startDate" value="2025-06-29">
+                        <div class="date-input-group">
+                            <input type="date" id="startDate" value="2025-06-29">
+                            <button type="button" id="startDatePreset1" class="btn btn-small">最近7天</button>
+                            <button type="button" id="startDatePreset2" class="btn btn-small">最近30天</button>
+                            <button type="button" id="startDatePreset3" class="btn btn-small">最近90天</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="endDate">结束日期:</label>
-                        <input type="date" id="endDate" value="2025-09-26">
+                        <div class="date-input-group">
+                            <input type="date" id="endDate" value="2025-09-26">
+                            <button type="button" id="endDateToday" class="btn btn-small">今天</button>
+                            <button type="button" id="endDateYesterday" class="btn btn-small">昨天</button>
+                        </div>
                     </div>
                 </div>
 
